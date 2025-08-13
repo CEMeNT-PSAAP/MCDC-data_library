@@ -4,6 +4,8 @@ import shutil
 
 import numpy as np
 
+import check_support
+
 # ======================================================================================
 # Setups
 # ======================================================================================
@@ -47,7 +49,9 @@ capture_reactions = [
 ]
 
 
-def set_capture_reactions(openmc_reactions, mcdc_reactions):
+def set_capture(openmc_reactions, mcdc_reactions):
+    print("  Capture")
+
     # XS accumulator
     xs_capture = np.zeros_like(energy_grid)
 
@@ -60,6 +64,46 @@ def set_capture_reactions(openmc_reactions, mcdc_reactions):
 
     # Create dataset
     mcdc_reactions.create_dataset("capture/xs", data=xs_capture)
+
+
+# ======================================================================================
+# Elastic scattering
+# ======================================================================================
+#   Supported physics:
+#     - Single distribution
+#     - Uncorrelated angle-energy
+#     - Angle
+#         - COM
+#         - Linear-linear interpolations
+
+elastic_scattering = "reaction_002"
+
+
+def set_elastic_scattering(openmc_reactions, mcdc_reactions):
+    print("  Elastic scattering")
+
+    openmc_secondary = openmc_reactions[f"{elastic_scattering}/product_0"]
+
+    # Check supported physics
+    check_support.single_distribution(openmc_secondary)
+    check_support.uncorrelated_distribution(openmc_secondary)
+    check_support.COM(openmc_reactions[elastic_scattering])
+    check_support.linear_interpolation(openmc_secondary["distribution_0/angle/mu"])
+
+    mcdc_elastic = mcdc_reactions.create_group("elastic_scattering")
+
+    # XS
+    xs = openmc_reactions[f"{elastic_scattering}/{temperature}/xs"][()]
+    mcdc_elastic.create_dataset("xs", data=xs)
+
+    # Scattering cosine distribution
+    openmc_angle = openmc_secondary[f"distribution_0/angle"]
+    mcdc_cosine = mcdc_elastic.create_group("scattering_cosine")
+    #
+    mcdc_cosine.create_dataset("energy_grid", data=openmc_angle["energy"][()])
+    mcdc_cosine.create_dataset("energy_offset", data=openmc_angle["mu"].attrs["offsets"])
+    mcdc_cosine.create_dataset("value", data=openmc_angle["mu"][0])
+    mcdc_cosine.create_dataset("PDF", data=openmc_angle["mu"][1])
 
 
 # ======================================================================================
@@ -94,7 +138,8 @@ for file_name in os.listdir(openmc_dir):
     mcdc_reactions.create_dataset("xs_energy_grid", data=energy_grid)
 
     # Set the supported reactions
-    set_capture_reactions(openmc_reactions, mcdc_reactions)
+    set_capture(openmc_reactions, mcdc_reactions)
+    set_elastic_scattering(openmc_reactions, mcdc_reactions)
 
     # Close the files
     openmc_file.close()
