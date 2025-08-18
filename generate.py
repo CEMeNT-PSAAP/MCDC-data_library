@@ -5,9 +5,10 @@ import shutil
 import numpy as np
 
 import check_support
+import reaction_list
 
 # ======================================================================================
-# Setups
+# Setup
 # ======================================================================================
 
 # Directories
@@ -28,25 +29,8 @@ os.makedirs(output_dir, exist_ok=True)
 # Capture reactions
 # ======================================================================================
 #   Capture reactions consist of all reactions not producing neutrons.
-#   The selected MTs are based on [https://t2.lanl.gov/nis/endf/mts.html].
-
-capture_reactions = [
-    "reaction_102",
-    "reaction_103",
-    "reaction_104",
-    "reaction_105",
-    "reaction_106",
-    "reaction_107",
-    "reaction_108",
-    "reaction_109",
-    "reaction_111",
-    "reaction_112",
-    "reaction_113",
-    "reaction_114",
-    "reaction_115",
-    "reaction_116",
-    "reaction_117",
-]
+#   The selected reaction MTs (see reaction_list.py) are based on 
+#   [https://t2.lanl.gov/nis/endf/mts.html].
 
 
 def set_capture(openmc_reactions, mcdc_reactions):
@@ -56,7 +40,7 @@ def set_capture(openmc_reactions, mcdc_reactions):
     xs_capture = np.zeros_like(energy_grid)
 
     # Go over all reactions, accumulate capture reactions
-    for reaction in capture_reactions:
+    for reaction in reaction_list.captures:
         if reaction in openmc_reactions.keys():
             openmc_xs = openmc_reactions[f"{reaction}/{temperature}/xs"]
             idx_start = openmc_xs.attrs["threshold_idx"]
@@ -76,11 +60,10 @@ def set_capture(openmc_reactions, mcdc_reactions):
 #         - COM
 #         - Linear-linear interpolations
 
-elastic_scattering = "reaction_002"
-
 
 def set_elastic_scattering(openmc_reactions, mcdc_reactions):
     print("  Elastic scattering")
+    elastic_scattering = reaction_list.elastic_scattering
 
     openmc_secondary = openmc_reactions[f"{elastic_scattering}/product_0"]
 
