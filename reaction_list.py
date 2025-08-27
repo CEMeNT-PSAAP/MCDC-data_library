@@ -16,3 +16,4 @@ captures = [
     "reaction_117",
 ]
 elastic_scattering = "reaction_002"
+fission = "reaction_018"
