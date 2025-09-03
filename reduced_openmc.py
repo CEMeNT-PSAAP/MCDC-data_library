@@ -8,7 +8,7 @@ import reaction_list
 # Setup
 # ======================================================================================
 
-supported_reactions = reaction_list.captures + [reaction_list.elastic_scattering]
+supported_reactions = reaction_list.captures + [reaction_list.elastic_scattering] + [reaction_list.fission]
 
 # Directories
 OPENMC_DIR = "/Users/ilhamvariansyah/nuclear_data/endfb-viii.0-hdf5/neutron/"
